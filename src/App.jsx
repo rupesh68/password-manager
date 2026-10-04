@@ -142,11 +142,9 @@ export default function App() {
         <div className="flex justify-between items-center pt-4">
           <div>
             <h1 className="text-2xl font-bold text-white flex items-center gap-2 tracking-tight">
-              🔐 Offline Vault
+              🔐 Password Manager
             </h1>
-            <p className="text-xs text-zinc-500 font-medium">
-              Tailwind v4 + Capacitor
-            </p>
+           
           </div>
           <button
             onClick={handleDownloadCSV}

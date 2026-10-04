@@ -87,7 +87,8 @@ export default function App() {
     }
   };
 
-  const handleDownloadCSV = () => {
+  // Modern Export CSV handler (Supports Android WebView Share & Desktop Download)
+  const handleDownloadCSV = async () => {
     if (vault.length === 0) {
       alert("No passwords to export!");
       return;
@@ -101,30 +102,55 @@ export default function App() {
       csvContent += `${escapedService},${escapedUsername},${escapedPassword},${item.createdAt}\n`;
     });
 
+    const fileName = `passwords_backup_${Date.now()}.csv`;
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const file = new File([blob], fileName, { type: "text/csv" });
+
+    // 1. Android / Mobile Native Share (opens system sheet to save/send file)
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: "Passwords Backup",
+          text: "Exported password manager vault backup CSV",
+          files: [file],
+        });
+        return;
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error("Share failed:", err);
+        } else {
+          return; // User dismissed native share sheet
+        }
+      }
+    }
+
+    // 2. Fallback for Desktop Browsers
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `passwords_backup_${Date.now()}.csv`);
+    link.setAttribute("download", fileName);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col items-center p-4 font-sans">
+    <div className="min-h-screen bg-black text-zinc-100 flex flex-col items-center p-4 font-sans selection:bg-emerald-500 selection:text-black">
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center pt-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-              🔐 Password Manager
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2 tracking-tight">
+              🔐 Offline Vault
             </h1>
-            
+            <p className="text-xs text-zinc-500 font-medium">
+              Tailwind v4 + Capacitor
+            </p>
           </div>
           <button
             onClick={handleDownloadCSV}
-            className="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+            className="bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-emerald-400 border border-zinc-800 px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
           >
             📥 Export CSV
           </button>
@@ -133,14 +159,14 @@ export default function App() {
         {/* Input Form */}
         <form
           onSubmit={handleAddPassword}
-          className="bg-white p-5 rounded-2xl border border-slate-200/80 space-y-4 shadow-sm"
+          className="bg-zinc-900/90 p-5 rounded-2xl border border-zinc-800 space-y-4 shadow-xl backdrop-blur-sm"
         >
-          <h2 className="text-sm font-bold text-slate-800">
+          <h2 className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
             Add New Account
           </h2>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">
+            <label className="block text-xs font-semibold text-zinc-400 mb-1">
               Service Name
             </label>
             <input
@@ -148,13 +174,13 @@ export default function App() {
               placeholder="e.g. Instagram, Netflix"
               value={service}
               onChange={(e) => setService(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-slate-900 placeholder-slate-400 transition"
+              className="w-full bg-black border border-zinc-800 rounded-xl p-2.5 text-sm focus:outline-none focus:border-emerald-500 text-zinc-100 placeholder-zinc-600 transition"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">
+            <label className="block text-xs font-semibold text-zinc-400 mb-1">
               Username / Email
             </label>
             <input
@@ -162,12 +188,12 @@ export default function App() {
               placeholder="e.g. @username or email@domain.com"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-slate-900 placeholder-slate-400 transition"
+              className="w-full bg-black border border-zinc-800 rounded-xl p-2.5 text-sm focus:outline-none focus:border-emerald-500 text-zinc-100 placeholder-zinc-600 transition"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">
+            <label className="block text-xs font-semibold text-zinc-400 mb-1">
               Password
             </label>
             <input
@@ -175,14 +201,14 @@ export default function App() {
               placeholder="Enter password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-slate-900 placeholder-slate-400 transition"
+              className="w-full bg-black border border-zinc-800 rounded-xl p-2.5 text-sm focus:outline-none focus:border-emerald-500 text-zinc-100 placeholder-zinc-600 transition"
               required
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-semibold py-2.5 rounded-xl text-sm shadow-sm transition-all cursor-pointer"
+            className="w-full bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-black font-bold py-2.5 rounded-xl text-sm shadow-md transition-all cursor-pointer"
           >
             Save Account
           </button>
@@ -191,14 +217,14 @@ export default function App() {
         {/* Stored Accounts List */}
         <div className="space-y-3">
           <div className="flex justify-between items-center px-1">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">
               Stored Accounts ({vault.length})
             </h2>
           </div>
 
           {vault.length === 0 ? (
-            <div className="text-center py-10 bg-white rounded-2xl border border-dashed border-slate-300">
-              <p className="text-sm font-medium text-slate-400">
+            <div className="text-center py-10 bg-zinc-900/40 rounded-2xl border border-dashed border-zinc-800">
+              <p className="text-sm font-medium text-zinc-500">
                 No accounts saved yet.
               </p>
             </div>
@@ -206,18 +232,18 @@ export default function App() {
             vault.map((item) => (
               <div
                 key={item.id}
-                className="bg-white p-4 rounded-2xl border border-slate-200/90 flex justify-between items-center shadow-sm hover:shadow transition-shadow"
+                className="bg-zinc-900 p-4 rounded-2xl border border-zinc-800/80 flex justify-between items-center shadow-md hover:border-zinc-700 transition-all"
               >
-                <div className="space-y-0.5 max-w-[50%]">
-                  <p className="font-bold text-slate-900 text-sm truncate">
+                <div className="space-y-0.5 max-w-[48%]">
+                  <p className="font-bold text-white text-sm truncate">
                     {item.service}
                   </p>
                   {item.username && item.username !== "-" && (
-                    <p className="text-xs text-slate-500 truncate font-medium">
+                    <p className="text-xs text-zinc-400 truncate font-medium">
                       {item.username}
                     </p>
                   )}
-                  <p className="text-xs font-mono text-emerald-700 font-semibold pt-0.5">
+                  <p className="text-xs font-mono text-emerald-400 font-semibold pt-0.5">
                     {showPasswords[item.id] ? item.password : "••••••••••••"}
                   </p>
                 </div>
@@ -227,8 +253,8 @@ export default function App() {
                     onClick={() => handleCopyPassword(item.id, item.password)}
                     className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                       copiedId === item.id
-                        ? "bg-emerald-100 text-emerald-700 border border-emerald-300"
-                        : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                        : "bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700/60"
                     }`}
                   >
                     {copiedId === item.id ? "✓ Copied" : "Copy"}
@@ -236,14 +262,14 @@ export default function App() {
 
                   <button
                     onClick={() => toggleVisibility(item.id)}
-                    className="px-2.5 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-200 transition cursor-pointer"
+                    className="px-2.5 py-1.5 text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg border border-zinc-700/60 transition cursor-pointer"
                   >
                     {showPasswords[item.id] ? "Hide" : "Show"}
                   </button>
 
                   <button
                     onClick={() => handleDelete(item.id)}
-                    className="px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg border border-transparent transition cursor-pointer"
+                    className="px-2.5 py-1.5 text-xs font-semibold text-rose-400 hover:bg-rose-950/40 hover:text-rose-300 rounded-lg border border-rose-900/30 transition cursor-pointer"
                   >
                     Delete
                   </button>

@@ -1,0 +1,5 @@
+{
+  "appId": "com.passwordmanager.app",
+  "appName": "Password Manager",
+  "webDir": "dist"
+}
